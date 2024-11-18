@@ -29,39 +29,38 @@ jobs:
       
       - name: 下载并解压 AMD64 版本
         run: |
+          mkdir -p amd64
+          cd amd64
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_amd64.zip
           unzip -o nezha-agent_linux_amd64.zip
-          # 检查文件大小
-          ls -lh nezha-agent_linux_amd64.zip
-          ls -lh nezha-agent
+          echo "AMD64 文件列表："
+          ls -lh
       
       - name: 下载并解压 ARM64 版本
         run: |
+          mkdir -p arm64
+          cd arm64
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_arm64.zip
           unzip -o nezha-agent_linux_arm64.zip
-          # 检查文件大小
-          ls -lh nezha-agent_linux_arm64.zip
-          ls -lh nezha-agent
+          echo "ARM64 文件列表："
+          ls -lh
       
       - name: UPX 压缩
         run: |
           # AMD64 版本
-          if [ -f "nezha-agent" ]; then
+          if [ -f "amd64/nezha-agent" ]; then
             echo "压缩 AMD64 版本..."
-            upx -9 nezha-agent -o swith_amd64
+            upx -9 amd64/nezha-agent -o swith_amd64
             ls -lh swith_amd64
           else
             echo "错误：找不到 AMD64 可执行文件"
             exit 1
           fi
           
-          # 备份原文件
-          mv nezha-agent nezha-agent.bak
-          
           # ARM64 版本
-          if [ -f "nezha-agent" ]; then
+          if [ -f "arm64/nezha-agent" ]; then
             echo "压缩 ARM64 版本..."
-            upx -9 nezha-agent -o swith_arm64
+            upx -9 arm64/nezha-agent -o swith_arm64
             ls -lh swith_arm64
           else
             echo "错误：找不到 ARM64 可执行文件"
@@ -77,8 +76,8 @@ jobs:
           # 检查文件大小是否合理
           for file in swith_amd64 swith_arm64; do
             if [ -f "$file" ]; then
-              size=$(stat -f%z "$file" || stat -c%s "$file")
-              if [ "$size" -lt 1000000 ]; then  # 小于1MB
+              size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
+              if [ "$size" -lt 5000000 ]; then  # 小于5MB
                 echo "错误：$file 文件大小异常 ($size bytes)"
                 exit 1
               fi
