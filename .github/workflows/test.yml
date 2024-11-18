@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: 安装 UPX
+      - name: 安装依赖
         run: sudo apt-get update && sudo apt-get install -y upx-ucl
       
       - name: 获取最新版本号
@@ -27,76 +27,80 @@ jobs:
           echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
           echo "获取到的版本号: $LATEST_VERSION"
 
-      - name: 下载并解压 AMD64 版本
+      - name: 下载并解压 amd64 版本
         run: |
           rm -rf amd64
           mkdir -p amd64
           cd amd64
           
-          # Nezha Agent AMD64
+          # Nezha Agent amd64
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_amd64.zip
           unzip -o nezha-agent_linux_amd64.zip
+          chmod +x nezha-agent
           
-          # Xray AMD64
+          # Xray amd64
           wget https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
           unzip -o Xray-linux-64.zip xray
+          chmod +x xray
           
-          # Cloudflared AMD64
+          # Cloudflared amd64
           wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
           
-          # Sing-box AMD64
+          # Sing-box amd64
           wget https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-1.10.1-linux-amd64.tar.gz
           tar xzf sing-box-1.10.1-linux-amd64.tar.gz
           mv sing-box-*/sing-box ./sing-box
           chmod +x sing-box
           
-          echo "AMD64 文件列表："
+          echo "amd64 文件列表："
           ls -lh
           cd ..
       
-      - name: 下载并解压 ARM64 版本
+      - name: 下载并解压 arm64 版本
         run: |
           rm -rf arm64
           mkdir -p arm64
           cd arm64
           
-          # Nezha Agent ARM64
+          # Nezha Agent arm64
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_arm64.zip
           unzip -o nezha-agent_linux_arm64.zip
+          chmod +x nezha-agent
           
-          # Xray ARM64
+          # Xray arm64
           wget https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-arm64-v8a.zip
           unzip -o Xray-linux-arm64-v8a.zip xray
+          chmod +x xray
           
-          # Cloudflared ARM64
+          # Cloudflared arm64
           wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -O cloudflared
           chmod +x cloudflared
           
-          # Sing-box ARM64
+          # Sing-box arm64
           wget https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-1.10.1-linux-arm64.tar.gz
           tar xzf sing-box-1.10.1-linux-arm64.tar.gz
           mv sing-box-*/sing-box ./sing-box
           chmod +x sing-box
           
-          echo "ARM64 文件列表："
+          echo "amd64 文件列表："
           ls -lh
           cd ..
       
-      - name: UPX 压缩 AMD64
+      - name: upx 压缩 amd64
         run: |
           cd amd64
-          echo "压缩 AMD64 文件..."
+          echo "压缩 amd64 文件..."
           upx -9 nezha-agent -o swith
           upx -9 xray -o web
           upx -9 cloudflared -o bot
           upx -9 sing-box -o sbx
           cd ..
 
-      - name: UPX 压缩 ARM64
+      - name: upx 压缩 arm64
         run: |
           cd arm64
-          echo "压缩 ARM64 文件..."
+          echo "压缩 arm64 文件..."
           upx -9 nezha-agent -o swith
           upx -9 xray -o web
           upx -9 cloudflared -o bot
@@ -120,7 +124,7 @@ jobs:
             fi
           done
 
-      - name: 发布 AMD64 版本
+      - name: 发布 amd64 版本
         uses: softprops/action-gh-release@v1
         with:
           tag_name: amd64
@@ -135,7 +139,7 @@ jobs:
           prerelease: false
           allow_updates: true
 
-      - name: 发布 ARM64 版本
+      - name: 发布 arm64 版本
         uses: softprops/action-gh-release@v1
         with:
           tag_name: arm64
