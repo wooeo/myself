@@ -1,4 +1,4 @@
-name: upx and release
+name: upx and push
 
 on:
   schedule:
@@ -19,13 +19,6 @@ jobs:
       
       - name: 安装依赖
         run: sudo apt-get update && sudo apt-get install -y upx-ucl
-      
-      - name: 获取最新版本号
-        id: get_version
-        run: |
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/nezhahq/agent/releases/latest | grep '"tag_name":' | cut -d'"' -f4)
-          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-          echo "获取到的版本号: $LATEST_VERSION"
 
       - name: 下载并解压 amd64 版本
         run: |
@@ -34,7 +27,7 @@ jobs:
           cd amd64
           
           # Nezha Agent amd64
-          wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_amd64.zip
+          wget https://github.com/nezhahq/agent/releases/latest/download/nezha-agent_linux_amd64.zip
           unzip -o nezha-agent_linux_amd64.zip
           chmod +x nezha-agent
           
@@ -64,7 +57,7 @@ jobs:
           cd arm64
           
           # Nezha Agent arm64
-          wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_arm64.zip
+          wget https://github.com/nezhahq/agent/releases/latest/download/nezha-agent_linux_arm64.zip
           unzip -o nezha-agent_linux_arm64.zip
           chmod +x nezha-agent
           
