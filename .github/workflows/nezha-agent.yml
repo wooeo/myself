@@ -23,20 +23,30 @@ jobs:
         run: |
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_amd64.zip
           unzip -o nezha-agent_linux_amd64.zip
-          ls -la  # 列出当前目录文件
+          echo "当前目录文件列表："
+          ls -la
+          echo "AMD64 文件名："
+          find . -type f -executable
       
       - name: 下载并解压 ARM64 版本
         run: |
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_arm64.zip
           unzip -o nezha-agent_linux_arm64.zip
-          ls -la  # 列出当前目录文件
+          echo "当前目录文件列表："
+          ls -la
+          echo "ARM64 文件名："
+          find . -type f -executable
       
       - name: UPX 压缩
         run: |
-          # 使用实际的文件名进行压缩
-          upx -9 nezha-agent -o swith_amd64
-          mv nezha-agent nezha-agent.bak  # 备份第一个文件
-          upx -9 nezha-agent -o swith_arm64
+          # 找到并压缩可执行文件
+          for file in $(find . -type f -executable); do
+            if [[ $file == *"amd64"* ]]; then
+              upx -9 "$file" -o swith_amd64
+            elif [[ $file == *"arm64"* ]]; then
+              upx -9 "$file" -o swith_arm64
+            fi
+          done
       
       - name: 创建 Release
         id: create_release
