@@ -1,4 +1,4 @@
-name: Compress and Release Agent
+name: upx and release
 
 on:
   schedule:
