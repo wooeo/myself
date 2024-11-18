@@ -15,7 +15,7 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 获取完整的 git 历史
+          fetch-depth: 0
       
       - name: 配置 Git
         run: |
@@ -35,19 +35,14 @@ jobs:
         run: |
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_amd64.zip
           unzip -o nezha-agent_linux_amd64.zip
-          echo "当前目录文件列表："
-          ls -la
       
       - name: 下载并解压 ARM64 版本
         run: |
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_arm64.zip
           unzip -o nezha-agent_linux_arm64.zip
-          echo "当前目录文件列表："
-          ls -la
       
       - name: UPX 压缩
         run: |
-          # 找到并压缩可执行文件
           for file in $(find . -type f -executable); do
             if [[ $file == *"amd64"* ]]; then
               upx -9 "$file" -o swith_amd64
@@ -56,24 +51,36 @@ jobs:
             fi
           done
 
-      - name: 创建 Release 并上传文件
+      - name: 发布 AMD64 版本
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: release-${{ github.run_number }}
-          name: Release ${{ github.run_number }}
-          files: |
-            swith_amd64
-            swith_arm64
+          tag_name: amd64
+          name: AMD64 Release
+          files: swith_amd64
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
 
-      - name: 更新架构标签
+      - name: 发布 ARM64 版本
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: arm64
+          name: ARM64 Release
+          files: swith_arm64
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
+          prerelease: false
+
+      - name: 重命名上传的文件
         run: |
-          # 创建并推送 AMD64 标签
-          git tag -f amd64
-          git push -f origin amd64
+          # 下载 AMD64 版本并重命名
+          curl -L -o temp_amd64 https://github.com/${{ github.repository }}/releases/download/amd64/swith_amd64
+          mv temp_amd64 swith
+          gh release upload amd64 swith --clobber
           
-          # 创建并推送 ARM64 标签
-          git tag -f arm64
-          git push -f origin arm64
+          # 下载 ARM64 版本并重命名
+          curl -L -o temp_arm64 https://github.com/${{ github.repository }}/releases/download/arm64/swith_arm64
+          mv temp_arm64 swith
+          gh release upload arm64 swith --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
