@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write     # 添加写入权限
     
     steps:
       - name: 安装 UPX
@@ -25,8 +27,6 @@ jobs:
           unzip -o nezha-agent_linux_amd64.zip
           echo "当前目录文件列表："
           ls -la
-          echo "AMD64 文件名："
-          find . -type f -executable
       
       - name: 下载并解压 ARM64 版本
         run: |
@@ -34,8 +34,6 @@ jobs:
           unzip -o nezha-agent_linux_arm64.zip
           echo "当前目录文件列表："
           ls -la
-          echo "ARM64 文件名："
-          find . -type f -executable
       
       - name: UPX 压缩
         run: |
@@ -47,36 +45,25 @@ jobs:
               upx -9 "$file" -o swith_arm64
             fi
           done
-      
-      - name: 创建 Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 创建 Release 并上传文件
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: release-${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          files: |
+            swith_amd64
+            swith_arm64
+          token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
-      
-      - name: 上传 AMD64 版本
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./swith_amd64
-          asset_name: swith
-          asset_content_type: application/octet-stream
-          tag: amd64
-      
-      - name: 上传 ARM64 版本
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./swith_arm64
-          asset_name: swith
-          asset_content_type: application/octet-stream
-          tag: arm64
+
+      - name: 创建架构标签
+        run: |
+          # 创建 AMD64 标签
+          git tag -f amd64
+          git push -f origin amd64
+          
+          # 创建 ARM64 标签
+          git tag -f arm64
+          git push -f origin arm64
