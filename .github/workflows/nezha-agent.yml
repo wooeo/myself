@@ -1,4 +1,4 @@
-name: Compress and Release Agent
+name: Compress and upx nezha-agent
 
 on:
   schedule:
