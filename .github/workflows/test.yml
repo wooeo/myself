@@ -121,25 +121,31 @@ jobs:
           echo "检查压缩后的文件大小："
           if [ "${{ steps.check_tags.outputs.amd64_exists }}" == "false" ]; then
             ls -lh amd64/swith amd64/web amd64/bot
-          fi
-          if [ "${{ steps.check_tags.outputs.arm64_exists }}" == "false" ]; then
-            ls -lh arm64/swith arm64/web arm64/bot
+            # 检查 AMD64 文件大小
+            for file in amd64/swith amd64/web amd64/bot; do
+              if [ -f "$file" ]; then
+                size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
+                if [ "$size" -lt 5000000 ]; then  # 小于5MB
+                  echo "错误：$file 文件大小异常 ($size bytes)"
+                  exit 1
+                fi
+              fi
+            done
           fi
           
-          # 检查文件大小是否合理
-          for arch in amd64 arm64; do
-            if [ "${{ steps.check_tags.outputs.${arch}_exists }}" == "false" ]; then
-              for file in $arch/swith $arch/web $arch/bot; do
-                if [ -f "$file" ]; then
-                  size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
-                  if [ "$size" -lt 5000000 ]; then  # 小于5MB
-                    echo "错误：$file 文件大小异常 ($size bytes)"
-                    exit 1
-                  fi
+          if [ "${{ steps.check_tags.outputs.arm64_exists }}" == "false" ]; then
+            ls -lh arm64/swith arm64/web arm64/bot
+            # 检查 ARM64 文件大小
+            for file in arm64/swith arm64/web arm64/bot; do
+              if [ -f "$file" ]; then
+                size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
+                if [ "$size" -lt 5000000 ]; then  # 小于5MB
+                  echo "错误：$file 文件大小异常 ($size bytes)"
+                  exit 1
                 fi
-              done
-            fi
-          done
+              fi
+            done
+          fi
 
       - name: 发布 AMD64 版本
         if: steps.check_tags.outputs.amd64_exists == 'false'
