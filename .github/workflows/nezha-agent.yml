@@ -50,8 +50,9 @@ jobs:
           # AMD64 版本
           if [ -f "amd64/nezha-agent" ]; then
             echo "压缩 AMD64 版本..."
-            upx -9 amd64/nezha-agent -o swith_amd64
-            ls -lh swith_amd64
+            upx -9 amd64/nezha-agent -o swith
+            mv swith amd64/swith
+            ls -lh amd64/swith
           else
             echo "错误：找不到 AMD64 可执行文件"
             exit 1
@@ -60,8 +61,9 @@ jobs:
           # ARM64 版本
           if [ -f "arm64/nezha-agent" ]; then
             echo "压缩 ARM64 版本..."
-            upx -9 arm64/nezha-agent -o swith_arm64
-            ls -lh swith_arm64
+            upx -9 arm64/nezha-agent -o swith
+            mv swith arm64/swith
+            ls -lh arm64/swith
           else
             echo "错误：找不到 ARM64 可执行文件"
             exit 1
@@ -70,14 +72,14 @@ jobs:
       - name: 检查压缩后的文件
         run: |
           echo "检查压缩后的文件大小："
-          ls -lh swith_amd64 || echo "AMD64 文件不存在"
-          ls -lh swith_arm64 || echo "ARM64 文件不存在"
+          ls -lh amd64/swith || echo "AMD64 文件不存在"
+          ls -lh arm64/swith || echo "ARM64 文件不存在"
           
           # 检查文件大小是否合理
-          for file in swith_amd64 swith_arm64; do
+          for file in amd64/swith arm64/swith; do
             if [ -f "$file" ]; then
               size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
-              if [ "$size" -lt 5000000 ]; then  # 小于5MB
+              if [ "$size" -lt 1000000 ]; then  # 小于1MB
                 echo "错误：$file 文件大小异常 ($size bytes)"
                 exit 1
               fi
@@ -89,8 +91,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: amd64
-          name: AMD64 Release
-          files: swith_amd64
+          name: amd64
+          files: amd64/swith
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
@@ -100,8 +102,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: arm64
-          name: ARM64 Release
-          files: swith_arm64
+          name: arm64
+          files: arm64/swith
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
