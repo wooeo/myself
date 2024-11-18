@@ -3,47 +3,24 @@ name: Compress and Release Agent
 on:
   schedule:
     - cron: '0 0 * * 0'  # 每周日午夜运行
-  workflow_dispatch:      
+  workflow_dispatch:      # 允许手动触发
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write    
+      contents: write     # 添加写入权限
     
     steps:
       - name: 检出代码
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: 检查已存在的标签
-        id: check_tags
-        run: |
-          # 检查 AMD64 标签
-          if git ls-remote --tags origin | grep -q "refs/tags/amd64"; then
-            echo "amd64_exists=true" >> $GITHUB_OUTPUT
-            echo "AMD64 标签已存在，跳过处理"
-          else
-            echo "amd64_exists=false" >> $GITHUB_OUTPUT
-            echo "需要处理 AMD64 版本"
-          fi
-
-          # 检查 ARM64 标签
-          if git ls-remote --tags origin | grep -q "refs/tags/arm64"; then
-            echo "arm64_exists=true" >> $GITHUB_OUTPUT
-            echo "ARM64 标签已存在，跳过处理"
-          else
-            echo "arm64_exists=false" >> $GITHUB_OUTPUT
-            echo "需要处理 ARM64 版本"
-          fi
       
       - name: 安装 UPX
-        if: steps.check_tags.outputs.amd64_exists == 'false' || steps.check_tags.outputs.arm64_exists == 'false'
         run: sudo apt-get update && sudo apt-get install -y upx-ucl
       
       - name: 获取最新版本号
-        if: steps.check_tags.outputs.amd64_exists == 'false' || steps.check_tags.outputs.arm64_exists == 'false'
         id: get_version
         run: |
           LATEST_VERSION=$(curl -s https://api.github.com/repos/nezhahq/agent/releases/latest | grep '"tag_name":' | cut -d'"' -f4)
@@ -51,7 +28,6 @@ jobs:
           echo "获取到的版本号: $LATEST_VERSION"
       
       - name: 下载并解压 AMD64 版本
-        if: steps.check_tags.outputs.amd64_exists == 'false'
         run: |
           rm -rf amd64
           mkdir -p amd64
@@ -74,7 +50,6 @@ jobs:
           cd ..
       
       - name: 下载并解压 ARM64 版本
-        if: steps.check_tags.outputs.arm64_exists == 'false'
         run: |
           rm -rf arm64
           mkdir -p arm64
@@ -97,7 +72,6 @@ jobs:
           cd ..
       
       - name: UPX 压缩 AMD64
-        if: steps.check_tags.outputs.amd64_exists == 'false'
         run: |
           cd amd64
           echo "压缩 AMD64 文件..."
@@ -107,7 +81,6 @@ jobs:
           cd ..
 
       - name: UPX 压缩 ARM64
-        if: steps.check_tags.outputs.arm64_exists == 'false'
         run: |
           cd arm64
           echo "压缩 ARM64 文件..."
@@ -119,36 +92,21 @@ jobs:
       - name: 检查压缩后的文件
         run: |
           echo "检查压缩后的文件大小："
-          if [ "${{ steps.check_tags.outputs.amd64_exists }}" == "false" ]; then
-            ls -lh amd64/swith amd64/web amd64/bot
-            # 检查 AMD64 文件大小
-            for file in amd64/swith amd64/web amd64/bot; do
-              if [ -f "$file" ]; then
-                size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
-                if [ "$size" -lt 5000000 ]; then  # 小于5MB
-                  echo "错误：$file 文件大小异常 ($size bytes)"
-                  exit 1
-                fi
-              fi
-            done
-          fi
+          ls -lh amd64/swith amd64/web amd64/bot || echo "AMD64 文件不存在"
+          ls -lh arm64/swith arm64/web arm64/bot || echo "ARM64 文件不存在"
           
-          if [ "${{ steps.check_tags.outputs.arm64_exists }}" == "false" ]; then
-            ls -lh arm64/swith arm64/web arm64/bot
-            # 检查 ARM64 文件大小
-            for file in arm64/swith arm64/web arm64/bot; do
-              if [ -f "$file" ]; then
-                size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
-                if [ "$size" -lt 5000000 ]; then  # 小于5MB
-                  echo "错误：$file 文件大小异常 ($size bytes)"
-                  exit 1
-                fi
+          # 检查文件大小是否合理
+          for file in amd64/swith amd64/web amd64/bot arm64/swith arm64/web arm64/bot; do
+            if [ -f "$file" ]; then
+              size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
+              if [ "$size" -lt 5000000 ]; then  # 小于5MB
+                echo "错误：$file 文件大小异常 ($size bytes)"
+                exit 1
               fi
-            done
-          fi
+            fi
+          done
 
       - name: 发布 AMD64 版本
-        if: steps.check_tags.outputs.amd64_exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: amd64
@@ -160,9 +118,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
+          allow_updates: true    # 允许更新已存在的release
 
       - name: 发布 ARM64 版本
-        if: steps.check_tags.outputs.arm64_exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: arm64
@@ -174,3 +132,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
+          allow_updates: true
