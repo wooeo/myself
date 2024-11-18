@@ -19,15 +19,15 @@ jobs:
           LATEST_VERSION=$(curl -s https://api.github.com/repos/nezhahq/agent/releases/latest | grep '"tag_name":' | cut -d'"' -f4)
           echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
       
-      - name: 下载 AMD64 版本
+      - name: 下载并解压 AMD64 版本
         run: |
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_amd64.zip
-          unzip nezha-agent_linux_amd64.zip
+          unzip -o nezha-agent_linux_amd64.zip
       
-      - name: 下载 ARM64 版本
+      - name: 下载并解压 ARM64 版本
         run: |
           wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_arm64.zip
-          unzip nezha-agent_linux_arm64.zip
+          unzip -o nezha-agent_linux_arm64.zip
       
       - name: UPX 压缩
         run: |
