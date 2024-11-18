@@ -13,14 +13,20 @@ jobs:
       - name: 安装 UPX
         run: sudo apt-get update && sudo apt-get install -y upx-ucl
       
+      - name: 获取最新版本号
+        id: get_version
+        run: |
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/nezhahq/agent/releases/latest | grep '"tag_name":' | cut -d'"' -f4)
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+      
       - name: 下载 AMD64 版本
         run: |
-          wget https://github.com/nezhahq/agent/releases/download/latest/nezha-agent_linux_amd64.zip
+          wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_amd64.zip
           unzip nezha-agent_linux_amd64.zip
       
       - name: 下载 ARM64 版本
         run: |
-          wget https://github.com/nezhahq/agent/releases/download/latest/nezha-agent_linux_arm64.zip
+          wget https://github.com/nezhahq/agent/releases/download/${{ steps.get_version.outputs.version }}/nezha-agent_linux_arm64.zip
           unzip nezha-agent_linux_arm64.zip
       
       - name: UPX 压缩
